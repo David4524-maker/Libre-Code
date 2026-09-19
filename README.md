@@ -49,7 +49,7 @@ en una sola interfaz con:
 
 > **6 lenguajes funcionan desde el primer segundo** sin instalar nada.
 > Los otros 8 se activan en cuanto su compilador esté en el `PATH`.
-
+<img width="1426" height="828" alt="Captura de pantalla 2026-09-18 215124" src="https://github.com/user-attachments/assets/9b60fedb-c3d3-4754-903e-fed7677619a6" />
 ---
 
 ##  Instalación
@@ -58,4 +58,4 @@ en una sola interfaz con:
 ```bash
 git clone https://github.com/David4524-maker/Libre-Code.git
 cd LibreCode
-<img width="1414" height="812" alt="Captura de pantalla 2026-09-18 161103" src="https://github.com/user-attachments/assets/faa21384-87c4-49fe-b5ae-34c8ca37cb0d" />
+<img width="1426" height="828" alt="Captura de pantalla 2026-09-18 215124" src="https://github.com/user-attachments/assets/9b60fedb-c3d3-4754-903e-fed7677619a6" />
