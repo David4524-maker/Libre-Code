@@ -6,8 +6,9 @@
   Lenguajes:  HTML · JS · C++ · C · C# · Python · Terminal · TS · Go ·
               CodePen · Java · Malbolge · SQL · Rust · EZScript
 
-  · El resultado aparece en el panel DERECHO (excepto "Terminal",
-    que se abre en una consola real del sistema).
+  · Cada lenguaje REPLICA su propia consola/terminal en el panel derecho
+    (colores, fuente, prompt y comando de compilación realistas).
+  · "Terminal" abre una consola real del sistema.
   · Atajos:  F5 = Ejecutar      Ctrl+S = Guardar
 ════════════════════════════════════════════════════════════════════════
 """
@@ -179,10 +180,8 @@ SELECT nombre, nota FROM alumnos WHERE nota > 8;
 </html>
 ''',
 
-# Programa clásico "Hello World" en Malbolge
 "Malbolge": "(=<`#9]~6ZY32Vx/4Rs+0No-&Jk)\"Fh}|Bcy?`=*z]Kw%oG4UUS0/@-ejc(:'8dc",
 
-# ─────────── NUEVO: EZScript ───────────
 "EZScript": '''// ============================================
 // EZScript — lenguaje en español
 // ============================================
@@ -249,6 +248,338 @@ LANGUAGES = ["HTML", "JS", "C++", "C", "C#", "Python", "Terminal",
 
 
 # ══════════════════════════════════════════════════════════════════════
+#  TEMAS DE CONSOLA POR LENGUAJE (replica el "terminal" de cada uno)
+# ══════════════════════════════════════════════════════════════════════
+#
+#  Cada tema define:
+#    bg          → color de fondo del panel
+#    fg          → color del texto normal
+#    font        → fuente del panel
+#    cursor      → color del cursor de texto
+#    cmd         → línea de comando falsa que se muestra arriba
+#    prompt      → prefijo (ej. "$", "C:\>", ">>>")
+#    ok_fg       → color para salida correcta
+#    err_fg      → color para errores
+#    cmd_fg      → color para la línea de comando
+#    info_fg     → color para mensajes del sistema
+#    banner      → texto que aparece al seleccionar el lenguaje
+
+CONSOLE_THEMES = {
+
+    "Python": {
+        "bg": "#0c0c0c", "fg": "#e6e6e6",
+        "font": ("Consolas", 10), "cursor": "#ffffff",
+        "cmd": "$ python -X utf8 main.py",
+        "prompt": ">>> ",
+        "ok_fg": "#e6e6e6", "err_fg": "#ff5555",
+        "cmd_fg": "#8be9fd", "info_fg": "#f1fa8c",
+        "banner": "Python 3.14 — REPL/script runner",
+    },
+
+    "Terminal": {
+        "bg": "#0c0c0c", "fg": "#cccccc",
+        "font": ("Lucida Console", 10), "cursor": "#ffffff",
+        "cmd": "C:\\Users\\user> script.bat",
+        "prompt": "C:\\Users\\user> ",
+        "ok_fg": "#cccccc", "err_fg": "#f92672",
+        "cmd_fg": "#8be9fd", "info_fg": "#f1fa8c",
+        "banner": "Windows CMD · bash",
+    },
+
+    "HTML": {
+        "bg": "#f6f8fa", "fg": "#24292f",
+        "font": ("Segoe UI", 10), "cursor": "#24292f",
+        "cmd": "🌐  render en navegador → index.html",
+        "prompt": "",
+        "ok_fg": "#22863a", "err_fg": "#cb2431",
+        "cmd_fg": "#0969da", "info_fg": "#6f42c1",
+        "banner": "Navegador (render HTML)",
+    },
+
+    "CodePen": {
+        "bg": "#1c2029", "fg": "#e6e6e6",
+        "font": ("Segoe UI", 10), "cursor": "#ffffff",
+        "cmd": "🎨  CodePen · HTML + CSS + JS  → index.html",
+        "prompt": "",
+        "ok_fg": "#50fa7b", "err_fg": "#ff5555",
+        "cmd_fg": "#ff79c6", "info_fg": "#8be9fd",
+        "banner": "Mini-CodePen (navegador)",
+    },
+
+    "JS": {
+        "bg": "#1e1e1e", "fg": "#d4d4d4",
+        "font": ("Consolas", 10), "cursor": "#ffffff",
+        "cmd": "$ node main.js",
+        "prompt": "> ",
+        "ok_fg": "#d4d4d4", "err_fg": "#f48771",
+        "cmd_fg": "#569cd6", "info_fg": "#4ec9b0",
+        "banner": "Node.js REPL / script",
+    },
+
+    "TS": {
+        "bg": "#1e1e1e", "fg": "#d4d4d4",
+        "font": ("Consolas", 10), "cursor": "#ffffff",
+        "cmd": "$ tsc --target es2020 main.ts && node main.js",
+        "prompt": "> ",
+        "ok_fg": "#d4d4d4", "err_fg": "#f48771",
+        "cmd_fg": "#3178c6", "info_fg": "#4ec9b0",
+        "banner": "TypeScript → JavaScript (tsc) → Node.js",
+    },
+
+    "C": {
+        "bg": "#000000", "fg": "#00ff41",
+        "font": ("Consolas", 10), "cursor": "#00ff41",
+        "cmd": "$ gcc main.c -O2 -o main && ./main",
+        "prompt": "$ ",
+        "ok_fg": "#00ff41", "err_fg": "#ff0040",
+        "cmd_fg": "#00bfff", "info_fg": "#ffff00",
+        "banner": "GCC · compilación + ejecución",
+    },
+
+    "C++": {
+        "bg": "#0f0f1a", "fg": "#00d4ff",
+        "font": ("Consolas", 10), "cursor": "#00d4ff",
+        "cmd": "$ g++ main.cpp -O2 -std=c++17 -o main && ./main",
+        "prompt": "$ ",
+        "ok_fg": "#00d4ff", "err_fg": "#ff2d55",
+        "cmd_fg": "#7b68ee", "info_fg": "#ffd700",
+        "banner": "G++ 17 · compilación + ejecución",
+    },
+
+    "C#": {
+        "bg": "#1e1e1e", "fg": "#dcdcdc",
+        "font": ("Consolas", 10), "cursor": "#ffffff",
+        "cmd": "$ dotnet run  ·  (ó csc / mcs + mono)",
+        "prompt": "> ",
+        "ok_fg": "#dcdcdc", "err_fg": "#f48771",
+        "cmd_fg": "#68217a", "info_fg": "#4ec9b0",
+        "banner": ".NET / Roslyn / Mono",
+    },
+
+    "Java": {
+        "bg": "#1b1b1b", "fg": "#f8f8f2",
+        "font": ("Consolas", 10), "cursor": "#ffffff",
+        "cmd": "$ javac Main.java && java Main",
+        "prompt": "$ ",
+        "ok_fg": "#f8f8f2", "err_fg": "#ff5555",
+        "cmd_fg": "#f89820", "info_fg": "#50fa7b",
+        "banner": "OpenJDK · javac + java",
+    },
+
+    "Go": {
+        "bg": "#0c0c0c", "fg": "#00add8",
+        "font": ("Consolas", 10), "cursor": "#00add8",
+        "cmd": "$ go run main.go",
+        "prompt": "$ ",
+        "ok_fg": "#00add8", "err_fg": "#ff5555",
+        "cmd_fg": "#00bcd4", "info_fg": "#f1fa8c",
+        "banner": "Go toolchain · go run",
+    },
+
+    "Rust": {
+        "bg": "#1c1410", "fg": "#f0dfc8",
+        "font": ("Consolas", 10), "cursor": "#ff6a00",
+        "cmd": "$ rustc -O main.rs -o main && ./main",
+        "prompt": "$ ",
+        "ok_fg": "#f0dfc8", "err_fg": "#ff5555",
+        "cmd_fg": "#ff6a00", "info_fg": "#fce94f",
+        "banner": "rustc · compilación nativa",
+    },
+
+    "SQL": {
+        "bg": "#282c34", "fg": "#abb2bf",
+        "font": ("Consolas", 10), "cursor": "#ffffff",
+        "cmd": "sqlite>  (base de datos en memoria)",
+        "prompt": "sqlite> ",
+        "ok_fg": "#98c379", "err_fg": "#e06c75",
+        "cmd_fg": "#61afef", "info_fg": "#e5c07b",
+        "banner": "SQLite 3 · modo memoria",
+    },
+
+    "Malbolge": {
+        "bg": "#1a0033", "fg": "#ff00ff",
+        "font": ("Courier New", 10), "cursor": "#ff00ff",
+        "cmd": "$ malbolge runner --trits=10 --memory=59049",
+        "prompt": "👾 ",
+        "ok_fg": "#ff00ff", "err_fg": "#ff0055",
+        "cmd_fg": "#00ffff", "info_fg": "#ffff00",
+        "banner": "Malbolge · intérprete puro de 10 trits",
+    },
+
+    "EZScript": {
+        "bg": "#1e272e", "fg": "#ffffff",
+        "font": ("Consolas", 10), "cursor": "#0984e3",
+        "cmd": "$ ezscript ejecutar demo.ez",
+        "prompt": "ez> ",
+        "ok_fg": "#ffffff", "err_fg": "#e74c3c",
+        "cmd_fg": "#0984e3", "info_fg": "#f1c40f",
+        "banner": "EZScript · intérprete en español",
+    },
+
+    # Tema por defecto por si algo falta
+    "_default": {
+        "bg": "#0d1117", "fg": "#c9d1d9",
+        "font": ("Consolas", 10), "cursor": "#ffffff",
+        "cmd": "",
+        "prompt": "",
+        "ok_fg": "#7ee787", "err_fg": "#ff7b72",
+        "cmd_fg": "#79c0ff", "info_fg": "#ffa657",
+        "banner": "Consola genérica",
+    },
+}
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  TEMAS DE EDITOR POR LENGUAJE (replica el IDE/editor real de cada uno)
+# ══════════════════════════════════════════════════════════════════════
+#
+#  Esto es DISTINTO de CONSOLE_THEMES: aquí se tematiza el panel donde
+#  se ESCRIBE el código (self.editor), no el panel de resultado.
+#
+#  Cada tema define:
+#    bg          → color de fondo del editor
+#    fg          → color del texto
+#    font        → fuente del editor
+#    cursor      → color del cursor de texto
+#    select_bg   → color de fondo al seleccionar texto
+#    select_fg   → color de texto al seleccionar
+#    tabwidth    → ancho de la tabulación (ej. "4c", "8c")
+#    ide         → nombre del IDE/editor que se está replicando
+
+EDITOR_THEMES = {
+
+    "Python": {
+        "bg": "#ffffff", "fg": "#000000",
+        "font": ("Consolas", 11), "cursor": "#000000",
+        "select_bg": "#c0dbf6", "select_fg": "#000000",
+        "tabwidth": "4c",
+        "ide": "IDLE — Python Shell",
+    },
+
+    "Terminal": {
+        "bg": "#1e1e1e", "fg": "#cccccc",
+        "font": ("Lucida Console", 11), "cursor": "#ffffff",
+        "select_bg": "#264f78", "select_fg": "#ffffff",
+        "tabwidth": "4c",
+        "ide": "Editor de script (.bat / .sh)",
+    },
+
+    "HTML": {
+        "bg": "#ffffff", "fg": "#1e1e1e",
+        "font": ("Consolas", 11), "cursor": "#1e1e1e",
+        "select_bg": "#add6ff", "select_fg": "#000000",
+        "tabwidth": "2c",
+        "ide": "VS Code · HTML5",
+    },
+
+    "CodePen": {
+        "bg": "#1e1e1e", "fg": "#e6e6e6",
+        "font": ("Consolas", 11), "cursor": "#47cf73",
+        "select_bg": "#3a3a3a", "select_fg": "#ffffff",
+        "tabwidth": "2c",
+        "ide": "CodePen · HTML + CSS + JS",
+    },
+
+    "JS": {
+        "bg": "#1e1e1e", "fg": "#d4d4d4",
+        "font": ("Consolas", 11), "cursor": "#ffffff",
+        "select_bg": "#264f78", "select_fg": "#ffffff",
+        "tabwidth": "2c",
+        "ide": "VS Code · JavaScript (Node.js)",
+    },
+
+    "TS": {
+        "bg": "#1e1e1e", "fg": "#d4d4d4",
+        "font": ("Consolas", 11), "cursor": "#3178c6",
+        "select_bg": "#264f78", "select_fg": "#ffffff",
+        "tabwidth": "2c",
+        "ide": "VS Code · TypeScript",
+    },
+
+    "C": {
+        "bg": "#ffffff", "fg": "#000000",
+        "font": ("Consolas", 11), "cursor": "#000000",
+        "select_bg": "#c9def9", "select_fg": "#000000",
+        "tabwidth": "4c",
+        "ide": "Code::Blocks · GCC",
+    },
+
+    "C++": {
+        "bg": "#2b2b2b", "fg": "#a9b7c6",
+        "font": ("Consolas", 11), "cursor": "#ffffff",
+        "select_bg": "#214283", "select_fg": "#ffffff",
+        "tabwidth": "4c",
+        "ide": "CLion (Darcula) · G++ 17",
+    },
+
+    "C#": {
+        "bg": "#1e1e1e", "fg": "#dcdcdc",
+        "font": ("Consolas", 11), "cursor": "#68217a",
+        "select_bg": "#264f78", "select_fg": "#ffffff",
+        "tabwidth": "4c",
+        "ide": "Visual Studio · .NET",
+    },
+
+    "Go": {
+        "bg": "#2b2b2b", "fg": "#a9b7c6",
+        "font": ("Consolas", 11), "cursor": "#00add8",
+        "select_bg": "#214283", "select_fg": "#ffffff",
+        "tabwidth": "8c",
+        "ide": "GoLand · go run",
+    },
+
+    "Java": {
+        "bg": "#2b2b2b", "fg": "#bababa",
+        "font": ("Consolas", 11), "cursor": "#f89820",
+        "select_bg": "#214283", "select_fg": "#ffffff",
+        "tabwidth": "4c",
+        "ide": "IntelliJ IDEA (Darcula) · javac",
+    },
+
+    "Rust": {
+        "bg": "#1c1410", "fg": "#f0dfc8",
+        "font": ("Consolas", 11), "cursor": "#ff6a00",
+        "select_bg": "#4a2f14", "select_fg": "#ffffff",
+        "tabwidth": "4c",
+        "ide": "VS Code · rust-analyzer",
+    },
+
+    "SQL": {
+        "bg": "#ffffff", "fg": "#1a1a1a",
+        "font": ("Consolas", 11), "cursor": "#0969da",
+        "select_bg": "#cfe4ff", "select_fg": "#000000",
+        "tabwidth": "4c",
+        "ide": "DBeaver · SQLite",
+    },
+
+    "Malbolge": {
+        "bg": "#1a0033", "fg": "#ff00ff",
+        "font": ("Courier New", 11), "cursor": "#00ffff",
+        "select_bg": "#4b0082", "select_fg": "#ffffff",
+        "tabwidth": "4c",
+        "ide": "Editor esotérico · Malbolge",
+    },
+
+    "EZScript": {
+        "bg": "#1e272e", "fg": "#ffffff",
+        "font": ("Consolas", 11), "cursor": "#0984e3",
+        "select_bg": "#0984e3", "select_fg": "#ffffff",
+        "tabwidth": "4c",
+        "ide": "EZScript IDE (ES)",
+    },
+
+    # Tema por defecto por si algo falta
+    "_default": {
+        "bg": "#1e1e1e", "fg": "#dcdcdc",
+        "font": ("Consolas", 11), "cursor": "#ffffff",
+        "select_bg": "#264f78", "select_fg": "#ffffff",
+        "tabwidth": "4c",
+        "ide": "Editor genérico",
+    },
+}
+
+
+# ══════════════════════════════════════════════════════════════════════
 #  INTÉRPRETE DE MALBOLGE (puro Python)
 # ══════════════════════════════════════════════════════════════════════
 
@@ -257,7 +588,6 @@ _MEM_SIZE = 59049          # 3^10
 
 
 def _crazy(x, y):
-    """Operación 'crazy' trit a trit."""
     z, p = 0, 1
     for _ in range(10):
         z += _CRAZY[x % 3][y % 3] * p
@@ -268,12 +598,10 @@ def _crazy(x, y):
 
 
 def _rotr(x):
-    """Rotación a la derecha de un valor de 10 trits."""
     return x // 3 + (x % 3) * 19683
 
 
 def run_malbolge(code, stdin_text="", max_steps=8_000_000):
-    """Ejecuta un programa Malbolge y devuelve su salida."""
     src = "".join(ch for ch in code if 33 <= ord(ch) <= 126)
     if not src:
         return False, "El programa Malbolge está vacío o tiene caracteres inválidos."
@@ -294,25 +622,23 @@ def run_malbolge(code, stdin_text="", max_steps=8_000_000):
         pasos += 1
         c %= _MEM_SIZE
         d %= _MEM_SIZE
-
         op = mem[c] = (mem[c] + c) % 94
 
-        if op == 4:                      # jmp [d]
-            c = mem[d]
-            continue
-        elif op == 5:                    # out a
+        if op == 4:
+            c = mem[d]; continue
+        elif op == 5:
             salida.append(chr(a % 256))
-        elif op == 23:                   # in a
+        elif op == 23:
             a = ord(entrada.pop(0)) if entrada else 0
-        elif op == 39:                   # rotr [d]; mov a,[d]
+        elif op == 39:
             a = mem[d] = _rotr(mem[d])
-        elif op == 40:                   # mov d,[d]
+        elif op == 40:
             d = mem[d]
-        elif op == 62:                   # crz [d],a; mov a,[d]
+        elif op == 62:
             a = mem[d] = _crazy(mem[d], a)
-        elif op == 68:                   # nop
+        elif op == 68:
             pass
-        elif op == 81:                   # halt
+        elif op == 81:
             break
         else:
             return False, ("Instrucción inválida en c=%d (op=%d).\n"
@@ -330,17 +656,12 @@ def run_malbolge(code, stdin_text="", max_steps=8_000_000):
 # ══════════════════════════════════════════════════════════════════════
 
 def run_ezscript(code):
-    """
-    Ejecuta código EZScript en modo headless (sin GUI).
-    Devuelve (ok: bool, salida: str).
-    Los comandos de dibujo/ventana se reportan como mensajes informativos.
-    """
+    """Ejecuta EZScript en modo headless y devuelve (ok, salida)."""
     import re as _re
     import random as _random
     import math as _math
     from datetime import datetime as _dt
 
-    # Paleta en español
     COLOR_MAP = {
         "rojo": "#e74c3c", "azul": "#3498db", "verde": "#2ecc71",
         "amarillo": "#f1c40f", "naranja": "#e67e22", "morado": "#9b59b6",
@@ -391,20 +712,17 @@ def run_ezscript(code):
         try: return int(float(v))
         except Exception: return default
 
-    # ── Preprocesado: expansión de bloques bucle:(N)…fin_bucle ──
+    # Preprocesado: expansión de bucles
     raw_lines = code.split('\n')
-    expanded = []          # lista de (num, texto)
+    expanded = []
     i = 0
-    stack = []
     while i < len(raw_lines):
         text = raw_lines[i]
         stripped = text.strip()
         m = _re.match(r'bucle:\s*\((.*?)\)', stripped)
         if m:
             n = s_int(eval_expr(m.group(1)), 0)
-            stack.append((n, i))
             i += 1
-            # recopilar cuerpo hasta fin_bucle
             body = []
             depth = 1
             while i < len(raw_lines) and depth > 0:
@@ -421,20 +739,18 @@ def run_ezscript(code):
                 expanded.append((len(expanded) + 1,
                                  "log_error:(\"bucle: sin fin_bucle\")"))
                 break
-            # expandir el cuerpo N veces
             for _ in range(max(0, n)):
                 for bl in body:
                     expanded.append((len(expanded) + 1, bl))
             i += 1
             continue
         if stripped.startswith("fin_bucle"):
-            # fin_bucle suelto: ignorar
             i += 1
             continue
         expanded.append((len(expanded) + 1, text))
         i += 1
 
-    # ── Bucle principal de ejecución ──
+    # Ejecución
     for num, raw in expanded:
         if should_stop:
             break
@@ -443,7 +759,6 @@ def run_ezscript(code):
             continue
 
         try:
-            # ============ COMANDOS BASE ============
             if line.startswith("IA:"):
                 m = _re.match(r'IA:\s*\((.*?)\)', line)
                 if m: log(f"[IA] ← '{eval_expr(m.group(1))}'")
@@ -502,9 +817,9 @@ def run_ezscript(code):
                     content = content[1:-1]
                 parts = content.split(",", 1)
                 txt = str(eval_expr(parts[0]))
-                log(f"[botón] «{txt}»  (no interactivo en modo headless)", "dim")
+                log(f"[botón] «{txt}»  (no interactivo en headless)", "dim")
 
-            # ============ VARIABLES Y CADENAS ============
+            # ── Variables y cadenas ──
             elif line.startswith("var:") or line.startswith("VARIABLE_DEFINIR:"):
                 m = _re.match(r'(?:var|VARIABLE_DEFINIR):\s*\((.*?),(.*?)\)', line)
                 if m: variables[m.group(1).strip()] = eval_expr(m.group(2))
@@ -605,7 +920,7 @@ def run_ezscript(code):
                 m = _re.match(r'contar:\s*\((.*?)\)', line)
                 if m: log(f"Contar: {len(str(eval_expr(m.group(1))))}")
 
-            # ============ MATEMÁTICAS ============
+            # ── Matemáticas ──
             elif line.startswith("random:"):
                 m = _re.match(r'random:\s*\((.*?),(.*?),(.*?)\)', line)
                 if m:
@@ -692,7 +1007,7 @@ def run_ezscript(code):
                     except Exception:
                         variables[m.group(1).strip()] = 0
 
-            # ============ LÓGICA ============
+            # ── Lógica ──
             elif line.startswith("igual_a:"):
                 m = _re.match(r'igual_a:\s*\((.*?),(.*?),(.*?)\)', line)
                 if m:
@@ -734,7 +1049,7 @@ def run_ezscript(code):
                 if m:
                     variables[m.group(1).strip()] = not bool(eval_expr(m.group(2)))
 
-            # ============ DIBUJO (HEADLESS) ============
+            # ── Dibujo (headless) ──
             elif line.startswith("rectangulo:"):
                 m = _re.match(r'rectangulo:\s*\((.*?)\)', line)
                 if m:
@@ -800,7 +1115,7 @@ def run_ezscript(code):
                     b = s_int(eval_expr(m.group(3))) % 256
                     current_draw_color = f"#{r:02x}{g:02x}{b:02x}"
 
-            # ============ SISTEMA ============
+            # ── Sistema ──
             elif line == "fecha":
                 log(f"Fecha: {_dt.now().strftime('%Y-%m-%d')}")
 
@@ -875,7 +1190,7 @@ def run_ezscript(code):
                     import uuid as _uuid
                     variables[m.group(1).strip()] = str(_uuid.uuid4())
 
-            # ============ IA, WEB Y ARCHIVOS ============
+            # ── IA, Web y archivos ──
             elif line.startswith("ia_resumir:"):
                 m = _re.match(r'ia_resumir:\s*\((.*?)\)', line)
                 if m:
@@ -954,14 +1269,12 @@ def run_ezscript(code):
                 log("Ejecución detenida.", "warn")
 
             else:
-                # Comando desconocido: aviso pero no error fatal
                 if ":" in line and not line.startswith("//"):
                     log(f"Comando no reconocido L{num}: {line}", "warn")
 
         except Exception as e:
             log(f"Error L{num}: {e}", "error")
 
-    # ── Resumen final ──
     if variables:
         salida.append("")
         salida.append("── Variables finales ─────────────────")
@@ -977,7 +1290,6 @@ def run_ezscript(code):
 # ══════════════════════════════════════════════════════════════════════
 
 def _run_cmd(cmd, cwd=None, timeout=60, stdin_text=""):
-    """Ejecuta un comando y devuelve (ok, salida)."""
     try:
         p = subprocess.run(
             cmd, cwd=cwd, input=stdin_text, text=True,
@@ -1159,7 +1471,6 @@ def run_rust(code):
 
 
 def run_sql(code):
-    """Ejecuta SQL sobre una base SQLite en memoria."""
     conn = sqlite3.connect(":memory:")
     cur = conn.cursor()
     lineas = []
@@ -1172,7 +1483,7 @@ def run_sql(code):
     try:
         for st in sentencias:
             cur.execute(st)
-            if cur.description:                       # SELECT / PRAGMA
+            if cur.description:
                 cols = [d[0] for d in cur.description]
                 filas = cur.fetchall()
                 lineas.append("┌─ " + " | ".join(cols))
@@ -1183,7 +1494,7 @@ def run_sql(code):
                     lineas.append("│ " + " | ".join(
                         "NULL" if v is None else str(v) for v in f))
                 lineas.append("└─ %d fila(s)" % len(filas))
-            else:                                     # INSERT / CREATE ...
+            else:
                 conn.commit()
                 lineas.append("✔ OK  (%d fila(s) afectada(s))" % cur.rowcount)
             lineas.append("")
@@ -1200,7 +1511,6 @@ def run_sql(code):
 
 
 def run_terminal(code):
-    """Abre una consola REAL del sistema con el script (excepción)."""
     try:
         if os.name == "nt":
             td = tempfile.mkdtemp(prefix="term_")
@@ -1209,7 +1519,7 @@ def run_terminal(code):
                 f.write("@echo off\r\nchcp 65001 >nul\r\n")
                 f.write(code.replace("\n", "\r\n"))
                 f.write("\r\necho.\r\npause\r\n")
-            os.startfile(bat)          # abre cmd.exe en ventana nueva
+            os.startfile(bat)
             return True, ("🖥  Script lanzado en una consola CMD nueva.\n"
                           "   (el resultado se muestra ahí, no aquí)\n\n"
                           "Archivo: " + bat)
@@ -1239,10 +1549,9 @@ def run_malbolge_lang(code):
 
 
 def run_ezscript_lang(code):
-    """Wrapper para el intérprete EZScript headless."""
     try:
         return run_ezscript(code)
-    except Exception as e:
+    except Exception:
         import traceback
         return False, "Error interno del intérprete EZScript:\n" + traceback.format_exc()
 
@@ -1274,8 +1583,6 @@ class MultiLangIDE:
 
     BG_EDITOR = "#1e1e1e"
     FG_EDITOR = "#dcdcdc"
-    BG_OUT    = "#0d1117"
-    FG_OUT    = "#7ee787"
 
     def __init__(self, root):
         self.root = root
@@ -1349,6 +1656,16 @@ class MultiLangIDE:
         frame = ttk.Frame(paned)
         paned.add(frame, weight=4)
 
+        cabecera = ttk.Frame(frame)
+        cabecera.pack(fill=tk.X, padx=6, pady=(4, 0))
+
+        ttk.Label(cabecera, text="EDITOR",
+                  font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
+
+        self.editor_label = ttk.Label(cabecera, text="",
+                                       font=("Segoe UI", 10, "italic"))
+        self.editor_label.pack(side=tk.LEFT, padx=(8, 0))
+
         barra = ttk.Frame(frame)
         barra.pack(fill=tk.X)
 
@@ -1387,7 +1704,6 @@ class MultiLangIDE:
         sb_h.pack(side=tk.BOTTOM, fill=tk.X)
         self.editor.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Insertar / Tab con 4 espacios
         self.editor.bind("<Tab>", self._tab)
 
     def _tab(self, event):
@@ -1409,15 +1725,75 @@ class MultiLangIDE:
         sb = ttk.Scrollbar(cont, orient=tk.VERTICAL)
         self.output = tk.Text(
             cont, wrap=tk.WORD, font=("Consolas", 10),
-            bg=self.BG_OUT, fg=self.FG_OUT,
+            bg="#0d1117", fg="#c9d1d9",
             insertbackground="#ffffff",
             selectbackground="#264f78",
             state=tk.DISABLED,
             yscrollcommand=sb.set,
+            padx=10, pady=8,
         )
         sb.config(command=self.output.yview)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         self.output.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Tags que se reconfiguran por lenguaje
+        self.output.tag_configure("cmd",   font=("Consolas", 9, "italic"))
+        self.output.tag_configure("ok",    font=("Consolas", 10))
+        self.output.tag_configure("err",   font=("Consolas", 10, "bold"))
+        self.output.tag_configure("info",  font=("Consolas", 10, "italic"))
+        self.output.tag_configure("hr",    font=("Consolas", 9))
+        self.output.tag_configure("banner",font=("Consolas", 11, "bold"))
+
+    # ═══════════════════════════════════════════════════════════════
+    #  TEMA DINÁMICO DE LA CONSOLA (por lenguaje)
+    # ═══════════════════════════════════════════════════════════════
+    def _apply_console_theme(self, lang):
+        """Reconfigura el panel de resultado con el look del lenguaje."""
+        theme = CONSOLE_THEMES.get(lang, CONSOLE_THEMES["_default"])
+
+        # Fondo, texto, fuente, cursor
+        self.output.configure(
+            bg=theme["bg"],
+            fg=theme["fg"],
+            font=theme["font"],
+            insertbackground=theme["cursor"],
+        )
+
+        # Tags con los colores del tema
+        self.output.tag_configure("cmd",    foreground=theme["cmd_fg"])
+        self.output.tag_configure("ok",     foreground=theme["ok_fg"])
+        self.output.tag_configure("err",    foreground=theme["err_fg"])
+        self.output.tag_configure("info",   foreground=theme["info_fg"])
+        self.output.tag_configure("hr",     foreground=theme["cmd_fg"])
+        self.output.tag_configure("banner", foreground=theme["info_fg"])
+
+    def _apply_editor_theme(self, lang):
+        """Reconfigura el panel de ESCRITURA (self.editor) con el look
+        del IDE real de cada lenguaje. Esto es independiente del tema
+        de la consola/resultado: aquí se tematiza el lugar donde se
+        escribe el código, no el lugar donde se ve la salida."""
+        theme = EDITOR_THEMES.get(lang, EDITOR_THEMES["_default"])
+
+        self.editor.configure(
+            bg=theme["bg"],
+            fg=theme["fg"],
+            font=theme["font"],
+            insertbackground=theme["cursor"],
+            selectbackground=theme["select_bg"],
+            selectforeground=theme["select_fg"],
+            tabs=(theme["tabwidth"],),
+        )
+        self.editor_label.config(text="·  " + theme["ide"])
+
+    def _write_banner(self, lang):
+        """Escribe un encabezado con el nombre del lenguaje/tema."""
+        theme = CONSOLE_THEMES.get(lang, CONSOLE_THEMES["_default"])
+        self.output.config(state=tk.NORMAL)
+        self.output.delete("1.0", tk.END)
+        self.output.insert(tk.END, "● " + theme["banner"] + "\n", "banner")
+        if theme.get("cmd"):
+            self.output.insert(tk.END, theme["cmd"] + "\n\n", "cmd")
+        self.output.config(state=tk.DISABLED)
 
     # ═══════════════════════════════════════════════════════════════
     #  LÓGICA
@@ -1428,7 +1804,6 @@ class MultiLangIDE:
         if not sel:
             return
 
-        # Guardar el buffer actual
         if self.current_lang:
             self.buffers[self.current_lang] = \
                 self.editor.get("1.0", tk.END).rstrip("\n")
@@ -1441,26 +1816,38 @@ class MultiLangIDE:
         self.lang_label.config(text="Lenguaje:  " + lang)
         self.status.set("Editando %s" % lang)
 
+        # ── Aplicar tema del editor (donde se escribe el código) ──
+        self._apply_editor_theme(lang)
+
+        # ── Aplicar tema de consola del lenguaje (donde se ve el resultado) ──
+        self._apply_console_theme(lang)
+        self._write_banner(lang)
+
+        # Avisos específicos
         if lang == "Terminal":
-            self.set_output("🖥  MODO TERMINAL\n"
-                            "─────────────────────────────────────────\n"
-                            "Este lenguaje se ejecuta en una consola REAL\n"
-                            "del sistema (CMD / bash), no aquí.\n\n"
-                            "Pulsa ▶ Ejecutar (F5) para lanzarla.")
+            self.output.config(state=tk.NORMAL)
+            self.output.insert(tk.END,
+                "\n🖥  Este lenguaje se ejecuta en una consola REAL\n"
+                "   del sistema (CMD / bash), no aquí.\n"
+                "   Pulsa ▶ Ejecutar (F5) para lanzarla.\n", "info")
+            self.output.config(state=tk.DISABLED)
+
         elif lang == "EZScript":
-            self.set_output("📜  EZScript — lenguaje en español.\n"
-                            "─────────────────────────────────────────\n"
-                            "Comandos disponibles: var:, mostrar/print,\n"
-                            "incrementar:, sumar:, restar:, multiplicar:,\n"
-                            "dividir:, raiz:, potencia:, random:, fecha,\n"
-                            "hora, log_info:, log_warn:, log_error:,\n"
-                            "bucle:(N) … fin_bucle, igual_a:, mayor_que:,\n"
-                            "menor_que:, mayusculas:, longitud:, etc.\n\n"
-                            "Los comandos de dibujo (circulo:, rectangulo:,\n"
-                            "texto_canvas:, color:) se reportan en modo texto.\n\n"
-                            "Pulsa ▶ Ejecutar (F5) para probar.")
-        else:
-            self.set_output("Listo. Pulsa ▶ Ejecutar (F5).")
+            self.output.config(state=tk.NORMAL)
+            self.output.insert(tk.END,
+                "\n📜  Comandos: var:, mostrar/print, incrementar:,\n"
+                "   sumar:/restar:/multiplicar:/dividir:, raiz:, random:,\n"
+                "   bucle:(N)…fin_bucle, igual_a:, mayor_que:, menor_que:,\n"
+                "   mayusculas:, longitud:, fecha, hora, log_info:, etc.\n"
+                "   Los comandos de dibujo (circulo:, rectangulo:,\n"
+                "   texto_canvas:, color:) se reportan como texto.\n", "info")
+            self.output.config(state=tk.DISABLED)
+
+        elif lang in ("HTML", "CodePen"):
+            self.output.config(state=tk.NORMAL)
+            self.output.insert(tk.END,
+                "\n🌐  El resultado se abrirá en tu navegador al pulsar F5.\n", "info")
+            self.output.config(state=tk.DISABLED)
 
     # ---------------------------------------------------------------
     def set_output(self, texto):
@@ -1470,7 +1857,11 @@ class MultiLangIDE:
         self.output.config(state=tk.DISABLED)
 
     def clear_output(self):
-        self.set_output("")
+        if self.current_lang:
+            self._apply_console_theme(self.current_lang)
+            self._write_banner(self.current_lang)
+        else:
+            self.set_output("")
 
     def restore_template(self):
         if not self.current_lang:
@@ -1494,7 +1885,17 @@ class MultiLangIDE:
 
         self._running = True
         self.status.set("Ejecutando %s..." % lang)
-        self.set_output("⏳  Ejecutando %s...\n" % lang)
+
+        # Mostrar "consola del lenguaje" mientras ejecuta
+        self._apply_console_theme(lang)
+        theme = CONSOLE_THEMES.get(lang, CONSOLE_THEMES["_default"])
+        self.output.config(state=tk.NORMAL)
+        self.output.delete("1.0", tk.END)
+        self.output.insert(tk.END, "● " + theme["banner"] + "\n", "banner")
+        if theme.get("cmd"):
+            self.output.insert(tk.END, theme["cmd"] + "\n\n", "cmd")
+        self.output.insert(tk.END, "⏳  ejecutando...\n", "info")
+        self.output.config(state=tk.DISABLED)
 
         hilo = threading.Thread(target=self._worker,
                                 args=(lang, code), daemon=True)
@@ -1514,9 +1915,39 @@ class MultiLangIDE:
 
     def _mostrar_resultado(self, lang, ok, salida):
         self._running = False
-        cabecera = ("✔  %s — ejecución correcta\n" % lang) if ok else \
-                   ("✘  %s — se produjeron errores\n" % lang)
-        self.set_output(cabecera + "═" * 48 + "\n\n" + str(salida))
+        theme = CONSOLE_THEMES.get(lang, CONSOLE_THEMES["_default"])
+
+        # Reaplicar tema (por si acaso)
+        self._apply_console_theme(lang)
+
+        self.output.config(state=tk.NORMAL)
+        self.output.delete("1.0", tk.END)
+
+        # Banner del lenguaje
+        self.output.insert(tk.END, "● " + theme["banner"] + "\n", "banner")
+
+        # Línea de comando "fake" replicando el shell real
+        if theme.get("cmd"):
+            self.output.insert(tk.END, theme["cmd"] + "\n", "cmd")
+            self.output.insert(tk.END, "─" * 56 + "\n\n", "hr")
+
+        # Salida real
+        tag = "ok" if ok else "err"
+        self.output.insert(tk.END, str(salida), tag)
+
+        # Estado final
+        if not str(salida).endswith("\n"):
+            self.output.insert(tk.END, "\n")
+        self.output.insert(tk.END, "\n")
+        self.output.insert(
+            tk.END,
+            ("· proceso finalizado con éxito (exit 0)\n" if ok
+             else "· proceso finalizado con errores (exit 1)\n"),
+            "cmd",
+        )
+
+        self.output.config(state=tk.DISABLED)
+
         self.status.set(("Listo." if ok else "Terminado con errores.") +
                         "  ·  " + lang)
 
