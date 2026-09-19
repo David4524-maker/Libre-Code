@@ -45,6 +45,7 @@ en una sola interfaz con:
 | **Java** | Sí | `javac` + `java` |
 | **Go** | Sí | `go` |
 | **Rust** | Sí | `rustc` |
+| **EZscript** | No | `Independiente`
 
 > **6 lenguajes funcionan desde el primer segundo** sin instalar nada.
 > Los otros 8 se activan en cuanto su compilador esté en el `PATH`.
