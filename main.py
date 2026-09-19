@@ -4,7 +4,7 @@
   IDE MULTI-LENGUAJE  ·  Python 3.14 + Tkinter
 ════════════════════════════════════════════════════════════════════════
   Lenguajes:  HTML · JS · C++ · C · C# · Python · Terminal · TS · Go ·
-              CodePen · Java · Malbolge · SQL · Rust
+              CodePen · Java · Malbolge · SQL · Rust · EZScript
 
   · El resultado aparece en el panel DERECHO (excepto "Terminal",
     que se abre en una consola real del sistema).
@@ -181,10 +181,71 @@ SELECT nombre, nota FROM alumnos WHERE nota > 8;
 
 # Programa clásico "Hello World" en Malbolge
 "Malbolge": "(=<`#9]~6ZY32Vx/4Rs+0No-&Jk)\"Fh}|Bcy?`=*z]Kw%oG4UUS0/@-ejc(:'8dc",
+
+# ─────────── NUEVO: EZScript ───────────
+"EZScript": '''// ============================================
+// EZScript — lenguaje en español
+// ============================================
+
+// --- Variables ---
+var:(nombre, "Mundo")
+var:(contador, 0)
+
+// --- Salida ---
+mostrar "¡Hola desde EZScript!"
+mostrar nombre
+
+// --- Bucles y aritmética ---
+bucle:(5)
+    incrementar:(contador, 1)
+    mostrar contador
+fin_bucle
+
+// --- Matemáticas ---
+sumar:(total, 10, 20)
+multiplicar:(doble, total, 2)
+mostrar doble
+
+raiz:(r, 144)
+mostrar r
+
+// --- Cadenas ---
+var:(texto, "hola mundo")
+mayusculas:(texto)
+mostrar texto
+
+longitud:(texto)
+
+// --- Aleatorio ---
+random:(n, 1, 100)
+mostrar n
+
+// --- Lógica ---
+igual_a:(esCinco, 5, 5)
+mostrar esCinco
+
+mayor_que:(esMayor, 10, 3)
+mostrar esMayor
+
+// --- Sistema ---
+fecha
+hora
+
+// --- Logs ---
+log_info:("Demo de EZScript completada")
+log_warn:("Esto es una advertencia")
+log_error:("Esto es un error simulado")
+
+// --- Dibujo (solo se reporta en modo headless) ---
+color:("rojo")
+circulo:(100, 100, 40)
+texto_canvas:(150, 60, "¡Hola EZScript!", "verde")
+''',
 }
 
 LANGUAGES = ["HTML", "JS", "C++", "C", "C#", "Python", "Terminal",
-             "TS", "Go", "CodePen", "Java", "Malbolge", "SQL", "Rust"]
+             "TS", "Go", "CodePen", "Java", "Malbolge", "SQL", "Rust",
+             "EZScript"]
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -261,6 +322,653 @@ def run_malbolge(code, stdin_text="", max_steps=8_000_000):
     texto = "".join(salida)
     if pasos >= max_steps:
         return False, "⏱ Límite de pasos alcanzado.\n" + texto
+    return True, texto if texto.strip() else "(programa terminado sin salida)"
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  INTÉRPRETE DE EZSCRIPT (modo headless)
+# ══════════════════════════════════════════════════════════════════════
+
+def run_ezscript(code):
+    """
+    Ejecuta código EZScript en modo headless (sin GUI).
+    Devuelve (ok: bool, salida: str).
+    Los comandos de dibujo/ventana se reportan como mensajes informativos.
+    """
+    import re as _re
+    import random as _random
+    import math as _math
+    from datetime import datetime as _dt
+
+    # Paleta en español
+    COLOR_MAP = {
+        "rojo": "#e74c3c", "azul": "#3498db", "verde": "#2ecc71",
+        "amarillo": "#f1c40f", "naranja": "#e67e22", "morado": "#9b59b6",
+        "rosa": "#fd79a8", "negro": "#2c3e50", "blanco": "#ffffff",
+        "gris": "#95a5a6", "cian": "#00cec9", "violeta": "#a29bfe",
+        "marron": "#6d4c41", "marrón": "#6d4c41",
+        "dorado": "#fdcb6e", "plateado": "#b2bec3",
+    }
+
+    variables = {}
+    salida = []
+    should_stop = False
+    current_draw_color = "#0984e3"
+    current_line_width = 3
+    text_positions = {}
+    emulated_os = "unknown"
+
+    def log(txt, level="info"):
+        prefix = {"info": "   ", "warn": "⚠  ", "error": "✘  ",
+                  "success": "✔  ", "dim": "·  "}.get(level, "   ")
+        salida.append(prefix + str(txt))
+
+    def get_color(val):
+        clean = str(val).strip().lower().replace('"', '').replace("'", "")
+        return COLOR_MAP.get(clean, clean)
+
+    def eval_expr(expr):
+        expr = str(expr).strip()
+        if (expr.startswith('"') and expr.endswith('"')) or \
+           (expr.startswith("'") and expr.endswith("'")):
+            return expr[1:-1]
+        tokens = _re.split(r'(\s+|[+\-*/()==><!]+)', expr)
+        new_tokens = []
+        for token in tokens:
+            t = token.strip()
+            if t in variables:
+                v = variables[t]
+                new_tokens.append(f'"{v}"' if isinstance(v, str) else str(v))
+            else:
+                new_tokens.append(token)
+        parsed = "".join(new_tokens)
+        try:
+            return eval(parsed, {"__builtins__": None}, {})
+        except Exception:
+            return expr
+
+    def s_int(v, default=0):
+        try: return int(float(v))
+        except Exception: return default
+
+    # ── Preprocesado: expansión de bloques bucle:(N)…fin_bucle ──
+    raw_lines = code.split('\n')
+    expanded = []          # lista de (num, texto)
+    i = 0
+    stack = []
+    while i < len(raw_lines):
+        text = raw_lines[i]
+        stripped = text.strip()
+        m = _re.match(r'bucle:\s*\((.*?)\)', stripped)
+        if m:
+            n = s_int(eval_expr(m.group(1)), 0)
+            stack.append((n, i))
+            i += 1
+            # recopilar cuerpo hasta fin_bucle
+            body = []
+            depth = 1
+            while i < len(raw_lines) and depth > 0:
+                s2 = raw_lines[i].strip()
+                if s2.startswith("bucle:"):
+                    depth += 1
+                elif s2 == "fin_bucle":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                body.append(raw_lines[i])
+                i += 1
+            if i >= len(raw_lines):
+                expanded.append((len(expanded) + 1,
+                                 "log_error:(\"bucle: sin fin_bucle\")"))
+                break
+            # expandir el cuerpo N veces
+            for _ in range(max(0, n)):
+                for bl in body:
+                    expanded.append((len(expanded) + 1, bl))
+            i += 1
+            continue
+        if stripped.startswith("fin_bucle"):
+            # fin_bucle suelto: ignorar
+            i += 1
+            continue
+        expanded.append((len(expanded) + 1, text))
+        i += 1
+
+    # ── Bucle principal de ejecución ──
+    for num, raw in expanded:
+        if should_stop:
+            break
+        line = raw.strip()
+        if not line or line.startswith("//"):
+            continue
+
+        try:
+            # ============ COMANDOS BASE ============
+            if line.startswith("IA:"):
+                m = _re.match(r'IA:\s*\((.*?)\)', line)
+                if m: log(f"[IA] ← '{eval_expr(m.group(1))}'")
+
+            elif line.startswith("SistemaOperativo:"):
+                m = _re.match(r'SistemaOperativo:\s*\((.*?)\)', line)
+                if m:
+                    tgt = str(eval_expr(m.group(1))).strip()
+                    if tgt in ("Windows", "macOS", "Linux"):
+                        emulated_os = tgt
+                        log(f"SO emulado: {emulated_os}")
+
+            elif line.startswith("JS:"):    log(f"[JS] {line[3:].strip()}")
+            elif line.startswith("HTML:"):  log(f"[HTML] {line[5:].strip()}")
+            elif line.startswith("CSS:"):   log(f"[CSS] {line[4:].strip()}")
+            elif line.startswith("JSON:"):
+                try: log(f"[JSON] {__import__('json').loads(line[5:].strip())}")
+                except Exception as e: log(f"JSON inválido L{num}: {e}", "warn")
+            elif line.startswith("ICON:"): log(f"[Icono] {line[5:].strip()}")
+
+            elif line.startswith("linea:"):
+                m = _re.match(r'linea:\s*\((.*?)\)', line)
+                if m:
+                    a = [x.strip() for x in m.group(1).split(',')]
+                    if len(a) >= 4:
+                        x1, y1 = s_int(eval_expr(a[0])), s_int(eval_expr(a[1]))
+                        x2, y2 = s_int(eval_expr(a[2])), s_int(eval_expr(a[3]))
+                        col = get_color(eval_expr(a[4])) if len(a) > 4 else current_draw_color
+                        log(f"[canvas] línea ({x1},{y1})→({x2},{y2}) color={col}")
+
+            elif line.startswith("conectar:"):
+                m = _re.match(r'conectar:\s*\((.*?)\)', line)
+                if m:
+                    a = [x.strip() for x in m.group(1).split(',')]
+                    if len(a) >= 2:
+                        log(f"[canvas] conectar '{eval_expr(a[0])}' ↔ '{eval_expr(a[1])}'")
+
+            elif line.startswith("color:"):
+                m = _re.match(r'color:\s*\((.*?)\)', line)
+                if m: current_draw_color = get_color(eval_expr(m.group(1).strip()))
+
+            elif line == "limpiar_pantalla":
+                salida.clear()
+                text_positions.clear()
+
+            elif line == "limpiar_consola":
+                salida.clear()
+
+            elif line.startswith("mostrar ") or line.startswith("print "):
+                log(eval_expr(line.split(" ", 1)[1]))
+
+            elif line.startswith("boton:") or line.startswith("button:"):
+                prefix = "boton:" if line.startswith("boton:") else "button:"
+                content = line[len(prefix):].strip()
+                if content.startswith("(") and content.endswith(")"):
+                    content = content[1:-1]
+                parts = content.split(",", 1)
+                txt = str(eval_expr(parts[0]))
+                log(f"[botón] «{txt}»  (no interactivo en modo headless)", "dim")
+
+            # ============ VARIABLES Y CADENAS ============
+            elif line.startswith("var:") or line.startswith("VARIABLE_DEFINIR:"):
+                m = _re.match(r'(?:var|VARIABLE_DEFINIR):\s*\((.*?),(.*?)\)', line)
+                if m: variables[m.group(1).strip()] = eval_expr(m.group(2))
+
+            elif line.startswith("incrementar:"):
+                m = _re.match(r'incrementar:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    k = m.group(1).strip()
+                    variables[k] = variables.get(k, 0) + s_int(eval_expr(m.group(2)), 1)
+
+            elif line.startswith("decrementar:"):
+                m = _re.match(r'decrementar:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    k = m.group(1).strip()
+                    variables[k] = variables.get(k, 0) - s_int(eval_expr(m.group(2)), 1)
+
+            elif line.startswith("entrada:"):
+                m = _re.match(r'entrada:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    log(f"[entrada] «{eval_expr(m.group(2))}» → (vacío en headless)", "dim")
+                    variables[m.group(1).strip()] = ""
+
+            elif line.startswith("mayusculas:"):
+                m = _re.match(r'mayusculas:\s*\((.*?)\)', line)
+                if m:
+                    k = m.group(1).strip()
+                    variables[k] = str(variables.get(k, "")).upper()
+
+            elif line.startswith("minusculas:"):
+                m = _re.match(r'minusculas:\s*\((.*?)\)', line)
+                if m:
+                    k = m.group(1).strip()
+                    variables[k] = str(variables.get(k, "")).lower()
+
+            elif line.startswith("longitud:"):
+                m = _re.match(r'longitud:\s*\((.*?)\)', line)
+                if m: log(f"Longitud: {len(str(eval_expr(m.group(1))))}")
+
+            elif line.startswith("reemplazar:"):
+                m = _re.match(r'reemplazar:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    k = m.group(1).strip()
+                    variables[k] = str(variables.get(k, "")).replace(
+                        str(eval_expr(m.group(2))), str(eval_expr(m.group(3))))
+
+            elif line.startswith("tipo_dato:"):
+                m = _re.match(r'tipo_dato:\s*\((.*?)\)', line)
+                if m: log(f"Tipo: {type(eval_expr(m.group(1))).__name__}")
+
+            elif line.startswith("concatenar:"):
+                m = _re.match(r'concatenar:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        str(eval_expr(m.group(2))) + str(eval_expr(m.group(3)))
+
+            elif line.startswith("a_numero:"):
+                m = _re.match(r'a_numero:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    try: variables[m.group(1).strip()] = float(eval_expr(m.group(2)))
+                    except Exception: variables[m.group(1).strip()] = 0
+
+            elif line.startswith("a_texto:"):
+                m = _re.match(r'a_texto:\s*\((.*?),(.*?)\)', line)
+                if m: variables[m.group(1).strip()] = str(eval_expr(m.group(2)))
+
+            elif line.startswith("unir:"):
+                m = _re.match(r'unir:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        str(eval_expr(m.group(2))) + str(eval_expr(m.group(3)))
+
+            elif line.startswith("dividir_texto:"):
+                m = _re.match(r'dividir_texto:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        str(eval_expr(m.group(2))).split(str(eval_expr(m.group(3))))
+
+            elif line.startswith("indice:"):
+                m = _re.match(r'indice:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    lst = eval_expr(m.group(2))
+                    idx = s_int(eval_expr(m.group(3)))
+                    try: variables[m.group(1).strip()] = lst[idx]
+                    except Exception: variables[m.group(1).strip()] = ""
+
+            elif line.startswith("invertir:"):
+                m = _re.match(r'invertir:\s*\((.*?),(.*?)\)', line)
+                if m: variables[m.group(1).strip()] = str(eval_expr(m.group(2)))[::-1]
+
+            elif line.startswith("ordenar:"):
+                m = _re.match(r'ordenar:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    v = eval_expr(m.group(2))
+                    try: variables[m.group(1).strip()] = sorted(v)
+                    except Exception: variables[m.group(1).strip()] = v
+
+            elif line.startswith("contar:"):
+                m = _re.match(r'contar:\s*\((.*?)\)', line)
+                if m: log(f"Contar: {len(str(eval_expr(m.group(1))))}")
+
+            # ============ MATEMÁTICAS ============
+            elif line.startswith("random:"):
+                m = _re.match(r'random:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = _random.randint(
+                        s_int(eval_expr(m.group(2))), s_int(eval_expr(m.group(3))))
+
+            elif line.startswith("raiz:"):
+                m = _re.match(r'raiz:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    try: variables[m.group(1).strip()] = _math.sqrt(float(eval_expr(m.group(2))))
+                    except Exception: variables[m.group(1).strip()] = 0
+
+            elif line.startswith("potencia:"):
+                m = _re.match(r'potencia:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = _math.pow(
+                        float(eval_expr(m.group(2))), float(eval_expr(m.group(3))))
+
+            elif line.startswith("redondear:"):
+                m = _re.match(r'redondear:\s*\((.*?),(.*?)\)', line)
+                if m: variables[m.group(1).strip()] = round(float(eval_expr(m.group(2))))
+
+            elif line.startswith("absoluto:"):
+                m = _re.match(r'absoluto:\s*\((.*?),(.*?)\)', line)
+                if m: variables[m.group(1).strip()] = abs(float(eval_expr(m.group(2))))
+
+            elif line.startswith("seno:"):
+                m = _re.match(r'seno:\s*\((.*?),(.*?)\)', line)
+                if m: variables[m.group(1).strip()] = _math.sin(_math.radians(float(eval_expr(m.group(2)))))
+
+            elif line.startswith("coseno:"):
+                m = _re.match(r'coseno:\s*\((.*?),(.*?)\)', line)
+                if m: variables[m.group(1).strip()] = _math.cos(_math.radians(float(eval_expr(m.group(2)))))
+
+            elif line.startswith("maximo:"):
+                m = _re.match(r'maximo:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = max(
+                        float(eval_expr(m.group(2))), float(eval_expr(m.group(3))))
+
+            elif line.startswith("minimo:"):
+                m = _re.match(r'minimo:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = min(
+                        float(eval_expr(m.group(2))), float(eval_expr(m.group(3))))
+
+            elif line.startswith("pi:"):
+                m = _re.match(r'pi:\s*\((.*?)\)', line)
+                if m: variables[m.group(1).strip()] = _math.pi
+
+            elif line.startswith("sumar:"):
+                m = _re.match(r'sumar:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        float(eval_expr(m.group(2))) + float(eval_expr(m.group(3)))
+
+            elif line.startswith("restar:"):
+                m = _re.match(r'restar:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        float(eval_expr(m.group(2))) - float(eval_expr(m.group(3)))
+
+            elif line.startswith("multiplicar:"):
+                m = _re.match(r'multiplicar:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        float(eval_expr(m.group(2))) * float(eval_expr(m.group(3)))
+
+            elif line.startswith("dividir:"):
+                m = _re.match(r'dividir:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    try:
+                        variables[m.group(1).strip()] = \
+                            float(eval_expr(m.group(2))) / float(eval_expr(m.group(3)))
+                    except Exception:
+                        variables[m.group(1).strip()] = 0
+
+            elif line.startswith("modulo:"):
+                m = _re.match(r'modulo:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    try:
+                        variables[m.group(1).strip()] = \
+                            float(eval_expr(m.group(2))) % float(eval_expr(m.group(3)))
+                    except Exception:
+                        variables[m.group(1).strip()] = 0
+
+            # ============ LÓGICA ============
+            elif line.startswith("igual_a:"):
+                m = _re.match(r'igual_a:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        (str(eval_expr(m.group(2))) == str(eval_expr(m.group(3))))
+
+            elif line.startswith("mayor_que:"):
+                m = _re.match(r'mayor_que:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    try:
+                        variables[m.group(1).strip()] = \
+                            float(eval_expr(m.group(2))) > float(eval_expr(m.group(3)))
+                    except Exception:
+                        variables[m.group(1).strip()] = False
+
+            elif line.startswith("menor_que:"):
+                m = _re.match(r'menor_que:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    try:
+                        variables[m.group(1).strip()] = \
+                            float(eval_expr(m.group(2))) < float(eval_expr(m.group(3)))
+                    except Exception:
+                        variables[m.group(1).strip()] = False
+
+            elif line.startswith("y:"):
+                m = _re.match(r'y:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        bool(eval_expr(m.group(2))) and bool(eval_expr(m.group(3)))
+
+            elif line.startswith("o:"):
+                m = _re.match(r'o:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = \
+                        bool(eval_expr(m.group(2))) or bool(eval_expr(m.group(3)))
+
+            elif line.startswith("no:"):
+                m = _re.match(r'no:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = not bool(eval_expr(m.group(2)))
+
+            # ============ DIBUJO (HEADLESS) ============
+            elif line.startswith("rectangulo:"):
+                m = _re.match(r'rectangulo:\s*\((.*?)\)', line)
+                if m:
+                    a = [eval_expr(x.strip()) for x in m.group(1).split(',')]
+                    c = get_color(a[4]) if len(a) > 4 else current_draw_color
+                    log(f"[canvas] rectángulo x={a[0]} y={a[1]} w={a[2]} h={a[3]} color={c}")
+
+            elif line.startswith("circulo:"):
+                m = _re.match(r'circulo:\s*\((.*?)\)', line)
+                if m:
+                    a = [eval_expr(x.strip()) for x in m.group(1).split(',')]
+                    c = get_color(a[3]) if len(a) > 3 else current_draw_color
+                    log(f"[canvas] círculo x={a[0]} y={a[1]} r={a[2]} color={c}")
+
+            elif line.startswith("ovalo:"):
+                m = _re.match(r'ovalo:\s*\((.*?)\)', line)
+                if m:
+                    a = [eval_expr(x.strip()) for x in m.group(1).split(',')]
+                    c = get_color(a[4]) if len(a) > 4 else current_draw_color
+                    log(f"[canvas] óvalo x={a[0]} y={a[1]} w={a[2]} h={a[3]} color={c}")
+
+            elif line.startswith("triangulo:"):
+                m = _re.match(r'triangulo:\s*\((.*?)\)', line)
+                if m:
+                    a = [eval_expr(x.strip()) for x in m.group(1).split(',')]
+                    c = get_color(a[6]) if len(a) > 6 else current_draw_color
+                    log(f"[canvas] triángulo puntos={a[:6]} color={c}")
+
+            elif line.startswith("texto_canvas:"):
+                m = _re.match(r'texto_canvas:\s*\((.*?),(.*?),(.*?)(?:,(.*?))?\)', line)
+                if m:
+                    x, y = eval_expr(m.group(1)), eval_expr(m.group(2))
+                    t = eval_expr(m.group(3))
+                    c = get_color(eval_expr(m.group(4))) if m.group(4) else current_draw_color
+                    log(f"[canvas] texto '{t}' en ({x},{y}) color={c}")
+
+            elif line.startswith("color_canvas:"):
+                m = _re.match(r'color_canvas:\s*\((.*?)\)', line)
+                if m: log(f"[canvas] fondo = {get_color(eval_expr(m.group(1)))}")
+
+            elif line.startswith("grosor_linea:"):
+                m = _re.match(r'grosor_linea:\s*\((.*?)\)', line)
+                if m: current_line_width = s_int(eval_expr(m.group(1)), 1)
+
+            elif line == "borrar_canvas":
+                log("[canvas] borrado")
+
+            elif line.startswith("poligono:"):
+                log("[canvas] polígono")
+
+            elif line.startswith("arco:"):
+                log("[canvas] arco")
+
+            elif line.startswith("cuadricula:"):
+                m = _re.match(r'cuadricula:\s*\((.*?)\)', line)
+                if m: log(f"[canvas] cuadrícula cada {eval_expr(m.group(1))}px")
+
+            elif line.startswith("rgb:"):
+                m = _re.match(r'rgb:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    r = s_int(eval_expr(m.group(1))) % 256
+                    g = s_int(eval_expr(m.group(2))) % 256
+                    b = s_int(eval_expr(m.group(3))) % 256
+                    current_draw_color = f"#{r:02x}{g:02x}{b:02x}"
+
+            # ============ SISTEMA ============
+            elif line == "fecha":
+                log(f"Fecha: {_dt.now().strftime('%Y-%m-%d')}")
+
+            elif line == "hora":
+                log(f"Hora: {_dt.now().strftime('%H:%M:%S')}")
+
+            elif line == "hora_actual":
+                log(_dt.now().strftime('%H:%M:%S'))
+
+            elif line == "fecha_hora":
+                log(_dt.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+            elif line.startswith("esperar:"):
+                m = _re.match(r'esperar:\s*\((.*?)\)', line)
+                if m:
+                    try: t = float(eval_expr(m.group(1)))
+                    except Exception: t = 0
+                    log(f"[esperar] {t}s (simulado en headless)", "dim")
+
+            elif line.startswith("alerta:"):
+                m = _re.match(r'alerta:\s*\((.*?)\)', line)
+                if m: log(f"[alerta] {eval_expr(m.group(1))}", "warn")
+
+            elif line.startswith("confirmar:"):
+                m = _re.match(r'confirmar:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    log(f"[confirmar] {eval_expr(m.group(2))} → False (headless)", "dim")
+                    variables[m.group(1).strip()] = False
+
+            elif line.startswith("abrir_url:"):
+                m = _re.match(r'abrir_url:\s*\((.*?)\)', line)
+                if m: log(f"[URL] {eval_expr(m.group(1))}")
+
+            elif line.startswith("copiar:"):
+                m = _re.match(r'copiar:\s*\((.*?)\)', line)
+                if m: log(f"[copiar] {eval_expr(m.group(1))}", "dim")
+
+            elif line.startswith("notificacion:"):
+                m = _re.match(r'notificacion:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    log(f"[notif: {eval_expr(m.group(1))}] {eval_expr(m.group(2))}")
+
+            elif line == "pitido":
+                log("[pitido]", "dim")
+
+            elif line.startswith("beep:"):
+                m = _re.match(r'beep:\s*\((.*?)(?:,(.*?))?\)', line)
+                if m: log(f"[beep] {eval_expr(m.group(1))}Hz", "dim")
+
+            elif line.startswith("ejecutar_cmd:"):
+                m = _re.match(r'ejecutar_cmd:\s*\((.*?)\)', line)
+                if m: log(f"[CMD] {eval_expr(m.group(1))}")
+
+            elif line.startswith("log_info:"):
+                m = _re.match(r'log_info:\s*\((.*?)\)', line)
+                if m: log(eval_expr(m.group(1)), "info")
+
+            elif line.startswith("log_warn:"):
+                m = _re.match(r'log_warn:\s*\((.*?)\)', line)
+                if m: log(eval_expr(m.group(1)), "warn")
+
+            elif line.startswith("log_error:"):
+                m = _re.match(r'log_error:\s*\((.*?)\)', line)
+                if m: log(eval_expr(m.group(1)), "error")
+
+            elif line == "esperar_tecla":
+                log("[esperar_tecla] (headless, se ignora)", "dim")
+
+            elif line.startswith("uuid:"):
+                m = _re.match(r'uuid:\s*\((.*?)\)', line)
+                if m:
+                    import uuid as _uuid
+                    variables[m.group(1).strip()] = str(_uuid.uuid4())
+
+            # ============ IA, WEB Y ARCHIVOS ============
+            elif line.startswith("ia_resumir:"):
+                m = _re.match(r'ia_resumir:\s*\((.*?)\)', line)
+                if m:
+                    log(f"[IA resumen] {str(eval_expr(m.group(1)))[:60]}...")
+
+            elif line.startswith("ia_traducir:"):
+                m = _re.match(r'ia_traducir:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    log(f"[IA traducir → {eval_expr(m.group(2))}] {eval_expr(m.group(1))}")
+
+            elif line.startswith("ia_explicar:"):
+                m = _re.match(r'ia_explicar:\s*\((.*?)\)', line)
+                if m: log("[IA explicar] análisis completado")
+
+            elif line.startswith("crear_archivo:"):
+                m = _re.match(r'crear_archivo:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    try:
+                        with open(eval_expr(m.group(1)), "w", encoding="utf-8") as f:
+                            f.write(str(eval_expr(m.group(2))))
+                        log(f"Archivo creado: {eval_expr(m.group(1))}", "success")
+                    except Exception as e:
+                        log(str(e), "error")
+
+            elif line.startswith("leer_archivo:"):
+                m = _re.match(r'leer_archivo:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    try:
+                        with open(eval_expr(m.group(2)), "r", encoding="utf-8") as f:
+                            variables[m.group(1).strip()] = f.read()
+                    except Exception as e:
+                        log(f"Error al leer: {e}", "error")
+
+            elif line.startswith("json_obtener:"):
+                m = _re.match(r'json_obtener:\s*\((.*?),(.*?),(.*?)\)', line)
+                if m:
+                    try:
+                        import json as _json
+                        j = eval_expr(m.group(2))
+                        data = _json.loads(j) if isinstance(j, str) else j
+                        variables[m.group(1).strip()] = data.get(eval_expr(m.group(3)), "")
+                    except Exception as e:
+                        log(str(e), "warn")
+
+            elif line.startswith("existe_archivo:"):
+                m = _re.match(r'existe_archivo:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    variables[m.group(1).strip()] = os.path.exists(str(eval_expr(m.group(2))))
+
+            elif line.startswith("eliminar_archivo:"):
+                m = _re.match(r'eliminar_archivo:\s*\((.*?)\)', line)
+                if m:
+                    try: os.remove(str(eval_expr(m.group(1))))
+                    except Exception as e: log(str(e), "error")
+
+            elif line.startswith("listar_archivos:"):
+                m = _re.match(r'listar_archivos:\s*\((.*?),(.*?)\)', line)
+                if m:
+                    try: variables[m.group(1).strip()] = os.listdir(str(eval_expr(m.group(2))))
+                    except Exception as e: log(str(e), "error")
+
+            elif line.startswith("html_titulo:"):
+                m = _re.match(r'html_titulo:\s*\((.*?)\)', line)
+                if m: log(f"<title>{eval_expr(m.group(1))}</title>")
+
+            elif line.startswith("css_tema:"):
+                m = _re.match(r'css_tema:\s*\((.*?)\)', line)
+                if m: log(f"[css_tema] {eval_expr(m.group(1))}")
+
+            elif line.startswith("js_eval:"):
+                m = _re.match(r'js_eval:\s*\((.*?)\)', line)
+                if m: log(f"[JS] {eval_expr(m.group(1))}")
+
+            elif line == "detener":
+                should_stop = True
+                log("Ejecución detenida.", "warn")
+
+            else:
+                # Comando desconocido: aviso pero no error fatal
+                if ":" in line and not line.startswith("//"):
+                    log(f"Comando no reconocido L{num}: {line}", "warn")
+
+        except Exception as e:
+            log(f"Error L{num}: {e}", "error")
+
+    # ── Resumen final ──
+    if variables:
+        salida.append("")
+        salida.append("── Variables finales ─────────────────")
+        for k, v in variables.items():
+            salida.append(f"   {k} = {v!r}")
+
+    texto = "\n".join(salida)
     return True, texto if texto.strip() else "(programa terminado sin salida)"
 
 
@@ -365,14 +1073,12 @@ def run_csharp(code):
         src = _tmp_file(td, "Program.cs", code)
         exe = _exe_name(td, "Program")
 
-        # 1) Roslyn (csc.exe)
         if shutil.which("csc"):
             ok, out = _run_cmd(["csc", "/nologo", "/out:" + exe, src], cwd=td)
             if not ok:
                 return False, "── Error de compilación (csc) ──\n" + out
             return _run_cmd([exe], cwd=td)
 
-        # 2) Mono (mcs + mono)
         if shutil.which("mcs"):
             ok, out = _run_cmd(["mcs", "-out:" + exe, src], cwd=td)
             if not ok:
@@ -381,7 +1087,6 @@ def run_csharp(code):
                 return _run_cmd(["mono", exe], cwd=td)
             return _run_cmd([exe], cwd=td)
 
-        # 3) .NET SDK
         if shutil.which("dotnet"):
             proj = os.path.join(td, "proj")
             ok, out = _run_cmd(["dotnet", "new", "console", "-o", proj,
@@ -533,6 +1238,15 @@ def run_malbolge_lang(code):
     return run_malbolge(code)
 
 
+def run_ezscript_lang(code):
+    """Wrapper para el intérprete EZScript headless."""
+    try:
+        return run_ezscript(code)
+    except Exception as e:
+        import traceback
+        return False, "Error interno del intérprete EZScript:\n" + traceback.format_exc()
+
+
 RUNNERS = {
     "HTML":     run_html,
     "JS":       run_js,
@@ -548,6 +1262,7 @@ RUNNERS = {
     "Malbolge": run_malbolge_lang,
     "SQL":      run_sql,
     "Rust":     run_rust,
+    "EZScript": run_ezscript_lang,
 }
 
 
@@ -732,6 +1447,18 @@ class MultiLangIDE:
                             "Este lenguaje se ejecuta en una consola REAL\n"
                             "del sistema (CMD / bash), no aquí.\n\n"
                             "Pulsa ▶ Ejecutar (F5) para lanzarla.")
+        elif lang == "EZScript":
+            self.set_output("📜  EZScript — lenguaje en español.\n"
+                            "─────────────────────────────────────────\n"
+                            "Comandos disponibles: var:, mostrar/print,\n"
+                            "incrementar:, sumar:, restar:, multiplicar:,\n"
+                            "dividir:, raiz:, potencia:, random:, fecha,\n"
+                            "hora, log_info:, log_warn:, log_error:,\n"
+                            "bucle:(N) … fin_bucle, igual_a:, mayor_que:,\n"
+                            "menor_que:, mayusculas:, longitud:, etc.\n\n"
+                            "Los comandos de dibujo (circulo:, rectangulo:,\n"
+                            "texto_canvas:, color:) se reportan en modo texto.\n\n"
+                            "Pulsa ▶ Ejecutar (F5) para probar.")
         else:
             self.set_output("Listo. Pulsa ▶ Ejecutar (F5).")
 
@@ -803,6 +1530,7 @@ class MultiLangIDE:
             "Java": ".java", "Rust": ".rs", "SQL": ".sql",
             "Terminal": ".bat" if os.name == "nt" else ".sh",
             "CodePen": ".html", "Malbolge": ".mb",
+            "EZScript": ".ez",
         }.get(self.current_lang, ".txt")
 
         ruta = filedialog.asksaveasfilename(
